@@ -52,51 +52,51 @@ def get_all_songs():
 
 @app.get("/api/audio/{filename:path}")
 def stream_audio(filename: str):
-    # Decode things like %20 or %5C back into spaces and slashes cleanly
+    
     decoded_filename = urllib.parse.unquote(filename)
     
-    # Check your true subfolder location path on disk
+    
     full_audio_path = os.path.join(MUSIC_FOLDER, "sk", os.path.basename(decoded_filename))
     
     if not os.path.exists(full_audio_path):
         raise HTTPException(status_code=404, detail=f"Audio file not found at: {full_audio_path}")
     return FileResponse(full_audio_path, media_type="audio/mpeg", filename=os.path.basename(decoded_filename))
 
-# Replace the endpoint in Main.py with this secure layout path resolution
+
 @app.get("/api/cover/{filename:path}")
 def get_cover_art(filename: str):
-    # Decode things like %20 or %5C cleanly back into real characters
+    
     decoded_path = urllib.parse.unquote(filename)
     
-    # Check if the incoming string is already an absolute path
+    
     if os.path.isabs(decoded_path):
         full_audio_path = decoded_path
     else:
-        # Fallback: cross-reference inside the subfolder structure
+        
         full_audio_path = os.path.join(MUSIC_FOLDER, "sk", os.path.basename(decoded_path))
     
-    # Debugging Check: Print out where the application is actively sweeping for files
+    
     print(f"Targeting metadata extraction at: {full_audio_path}")
     
     if not os.path.exists(full_audio_path):
-        # Fallback directly to an open repository visual icon if the target file isn't on disk
+        
         return RedirectResponse(url="https://unsplash.com")
     
     try:
-        # Load the MP3 file using Mutagen's strict ID3 frame processor
+        
         audio = MP3(full_audio_path, ID3=ID3)
         
-        # Look specifically for the Attached Picture (APIC) tag frame
+        
         if audio.tags:
             for tag in audio.tags.values():
                 if isinstance(tag, APIC):
-                    # Return the raw picture binary data immediately to the frontend image element
+                    
                     return Response(content=tag.data, media_type=tag.mime)
                     
     except Exception as e:
         print(f"Metadata extraction bypass for {filename}: {e}")
     
-    # Fallback placeholder cover art if the audio file lacks an embedded APIC frame
+    
     return RedirectResponse(url="https://unsplash.com")
 
 
