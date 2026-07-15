@@ -3,9 +3,8 @@ import sqlite3 as sql
 from tinytag import TinyTag
 
 DB_PATH = r"C:\Users\lenovo\csee\music hub real scratch\sql_db.db"
-MUSIC_FOLDER=r"C:\Users\lenovo\csee\music hub real scratch\New folder"
-os.chdir(MUSIC_FOLDER)
-list=os.listdir(MUSIC_FOLDER)
+MUSIC_FOLDER=r"C:\Users\lenovo\csee\music hub real scratch\New folder\sk"
+
 l=[]
 def run_scan():
     conn=sql.connect(DB_PATH)
@@ -54,3 +53,4 @@ def run_scan():
     conn.close()
 if __name__ == "__main__":
     run_scan()
+run_scan()
