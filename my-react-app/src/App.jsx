@@ -8,29 +8,28 @@ const [searchQuery, setSearchQuery] = useState("");
 const [currentSongIndex, setCurrentSongIndex] = useState(null);
 const [isPopupExpanded, setIsPopupExpanded] = useState(false); 
 const [activeTab, setActiveTab] = useState("all"); 
-const [playbackMode, setPlaybackMode] = useState("playlist"); // "playlist" | "recommendation"
+const [playbackMode, setPlaybackMode] = useState("playlist"); 
 
 
 
-// 🚀 FIXED STATE HUB FOR REPEAT-PROOF NAVIGATION
-const [recommendationTracklist, setRecommendationTracklist] = useState([]); // Holds the active AI session songs
-const [recTracklistIndex, setRecTracklistIndex] = useState(0);              // Tracks position inside the AI session
+const [recommendationTracklist, setRecommendationTracklist] = useState([]); 
+const [recTracklistIndex, setRecTracklistIndex] = useState(0);              
 const [isPlaying, setIsPlaying] = useState(false);
 const [trackProgress, setTrackProgress] = useState(0);
 const [trackDuration, setTrackDuration] = useState(0);
 const [queue, setQueue] = useState([]); 
-const [expandedCategory, setExpandedCategory] = useState(null); // Fixes line 224
+const [expandedCategory, setExpandedCategory] = useState(null); 
 
 
 
 const audioRef = useRef(null);
 
-// Get the currently playing song cleanly based on what mode you are in
+
 const currentSong = playbackMode === "recommendation" && recommendationTracklist.length > 0
   ? recommendationTracklist[recTracklistIndex]
   : songs[currentSongIndex];
 
-  // Fetch track database list
+  
   useEffect(() => {
     fetch("http://localhost:8000/api/songs")
       .then((res) => res.json())
@@ -41,15 +40,13 @@ const currentSong = playbackMode === "recommendation" && recommendationTracklist
       .catch((err) => console.error("Error fetching library:", err));
   }, []);
 
-  // Filter list with search input
-  // Sync HTML5 media playback status with component variables safely
-// 🚀 FIXED: Monitors track updates cleanly without triggering browser play blocks
+  
 useEffect(() => {
   if (audioRef.current && currentSong) {
-    // Force the HTML5 audio element to reload its internal source buffer
+    
     audioRef.current.load();
     
-    // If the player state says it should be playing, wait for the file to load
+    
     if (isPlaying) {
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
@@ -59,11 +56,11 @@ useEffect(() => {
       }
     }
   }
-}, [currentSong]); // Triggers when the track profile itself changes
+}, [currentSong]); 
 
 
 const togglePlayPause = (e) => {
-  if (e) e.stopPropagation(); // Stops mini-bar window layers from expanding on button click
+  if (e) e.stopPropagation(); 
   if (!audioRef.current || currentSongIndex === null) return;
   
   if (isPlaying) {
@@ -79,24 +76,21 @@ const togglePlayPause = (e) => {
   
 
 
-  // 💡 FIXED: Robust Spotify-style queue navigation controller
-  // 💡 FIXED: Track dynamic recommendations cleanly without indexing loop bugs
-// 🚀 FIXED: Robust tracking engine that handles filename mismatches perfectly
+  
 const playNext = (e) => {
   if (e) e.stopPropagation();
 
-  // 1. ROUTE A: AI Recommendation Vibe Navigation
+ 
   if (playbackMode === "recommendation" && recommendationTracklist.length > 0) {
     if (recTracklistIndex < recommendationTracklist.length - 1) {
-      setRecTracklistIndex(prev => prev + 1); // Move to next item in the AI session playlist
+      setRecTracklistIndex(prev => prev + 1);
     } else {
-      setRecTracklistIndex(0); // Loop back to the start of the recommendation session
+      setRecTracklistIndex(0); 
     }
     setIsPlaying(true);
     return;
   }
 
-  // 2. ROUTE B: Normal Chronological Playlist Navigation
   if (!songs || songs.length === 0) return;
   if (currentSongIndex === null || currentSongIndex === songs.length - 1) {
     setCurrentSongIndex(0);
@@ -109,18 +103,18 @@ const playNext = (e) => {
 const playPrevious = (e) => {
   if (e) e.stopPropagation();
 
-  // 1. ROUTE A: AI Recommendation Vibe Navigation
+  
   if (playbackMode === "recommendation" && recommendationTracklist.length > 0) {
     if (recTracklistIndex > 0) {
-      setRecTracklistIndex(prev => prev - 1); // Move backward through the generated AI sequence cleanly
+      setRecTracklistIndex(prev => prev - 1); 
     } else {
-      setRecTracklistIndex(recommendationTracklist.length - 1); // Jump to the end of the AI session
+      setRecTracklistIndex(recommendationTracklist.length - 1); 
     }
     setIsPlaying(true);
     return;
   }
 
-  // 2. ROUTE B: Normal Chronological Playlist Navigation
+  
   if (!songs || songs.length === 0) return;
   if (currentSongIndex === null || currentSongIndex === 0) {
     setCurrentSongIndex(songs.length - 1);
@@ -134,7 +128,7 @@ const playPrevious = (e) => {
 
 
 
-  // Grouping function helper
+
   const groupByField = (field) => {
     return filteredSongs.reduce((groups, song) => {
       const key = song[field] || `Unknown ${field.charAt(0).toUpperCase() + field.slice(1)}`;
@@ -360,7 +354,6 @@ const playPrevious = (e) => {
     onClick={async () => {
       setPlaybackMode("recommendation");
       
-      // Determine what base song we are computing recommendations from
       const baseSong = songs[currentSongIndex];
       if (!baseSong) return;
 
@@ -376,15 +369,15 @@ const playPrevious = (e) => {
           const rawRecs = json.sdata || (Array.isArray(json) ? json : null);
           
           if (rawRecs && rawRecs.length > 0) {
-            // Map raw server filename references into full frontend song objects
+        
             const sessionTracks = rawRecs.map(rec => {
               return songs.find(s => s.file_path === rec.file_name || s.file_path.endsWith(rec.file_name));
             }).filter(Boolean);
 
             if (sessionTracks.length > 0) {
-              // Combine your current base song and its recommended tracks into a single fixed list
+              
               setRecommendationTracklist([baseSong, ...sessionTracks]);
-              setRecTracklistIndex(0); // Start at the current song inside the new AI list
+              setRecTracklistIndex(0); 
               setIsPlaying(true);
             }
           }
