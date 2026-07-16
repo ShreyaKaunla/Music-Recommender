@@ -12,7 +12,7 @@ MUSIC_FOLDER=r"C:\Users\lenovo\csee\music hub real scratch\New folder\sk"
 
 l=[]
 def run_scan():
-    conn=sql.connect(DB_PATH)
+    conn=sql.connect(DB_PATH, timeout=30.0)
     cursor=conn.cursor()
     cursor.execute("""Create table if not EXISTS tracks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,7 +93,7 @@ def mel():
     songs=[]
     tasks=[]
     broken=[]
-    conn=sql.connect(DB_PATH)
+    conn=sql.connect(DB_PATH, timeout=30.0)
     cursor=conn.cursor()
     cursor.execute("PRAGMA table_info(tracks)")
     k = cursor.fetchall()
@@ -207,5 +207,6 @@ def clustering():
         conn.commit()
     conn.close()
 if __name__ == "__main__":
+    
     run_scan()
-run_scan()
+  
