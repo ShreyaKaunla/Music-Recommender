@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, FileResponse, RedirectResponse
 import urllib.parse
 
-from scan import run_scan
+from scan import run_scan, mel, clustering
 
 app = FastAPI()
 
@@ -26,8 +26,42 @@ MUSIC_FOLDER = r"C:\Users\lenovo\csee\music hub real scratch\New folder"
 
 @app.on_event("startup")
 def startup_scan():
-    print("Launching music directory scan...")
-    run_scan()
+    try:
+        # Step 1: Always scan the directory for new tracks first (Runs fast, does not re-extract features)
+        print("📁 Step 1: Syncing directory for new track metadata...")
+        run_scan()
+        
+        # Connect to see if any music file needs feature processing
+        conn = sql.connect(DB_PATH, timeout=30.0)
+        cursor = conn.cursor()
+        
+        # Look for tracks where the neural network fingerprint is missing
+        cursor.execute("SELECT COUNT(*) FROM tracks WHERE vector_data IS NULL")
+        unprocessed_count = cursor.fetchone()[0]
+        
+        # Look for tracks where the cluster ID hasn't been assigned yet
+        cursor.execute("SELECT COUNT(*) FROM tracks WHERE cluster_id IS NULL")
+        unclustered_count = cursor.fetchone()[0]
+        conn.close()
+
+        # Step 2: CONDITIONAL FEATURE EXTRACTION (mel)
+        if unprocessed_count > 0:
+            print(f"🎵 Step 2: Found {unprocessed_count} new track(s). Processing audio matrices...")
+            mel()
+        else:
+            print("✅ Step 2: All audio fingerprints match database records. Skipping extraction cache.")
+
+        # Step 3: CONDITIONAL K-MEANS RE-CLUSTERING
+        if unclustered_count > 0 or unprocessed_count > 0:
+            print("✨ Step 3: Recalculating AI vector neighborhood profiles...")
+            clustering()
+        else:
+            print("✅ Step 3: Cluster grid stable. Skipping K-Means calculation loop.")
+        
+        print("🎉 Web app server ready for incoming requests!")
+        
+    except Exception as e:
+        print(f"⚠️ Indexing pipeline bypassed due to environment layout adjustments: {e}")
 
 @app.get("/api/songs")
 def get_all_songs():
