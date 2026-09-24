@@ -1,1 +1,2 @@
-sql_db.db 
+__pycache__/
+*.pyc
